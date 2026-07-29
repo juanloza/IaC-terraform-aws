@@ -79,8 +79,9 @@ terraform apply -var-file=example.tfvars
 
 ## Status
 
-Under construction. Implemented so far: `modules/vpc`, `modules/iam`, `modules/s3`.
-Remaining: `rds`, `ec2`, `route53`, the `environments/example` composition, and CI/CD.
+Under construction. Implemented so far: `modules/vpc`, `modules/iam`, `modules/s3`,
+`modules/rds`. Remaining: `ec2`, `route53`, the `environments/example` composition,
+and CI/CD.
 
 ## License
 
