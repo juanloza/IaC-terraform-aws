@@ -27,9 +27,9 @@ terraform-aws-modules/
 └── .github/workflows/  # CI: fmt, validate, lint, security scan, secrets, plan
 ```
 
-Each module is self-contained (its own `variables`, `outputs`, `versions` and
-`README.md`) and can be consumed independently. The `environments/` root modules
-wire the modules together into a deployable stack.
+Each module is self-contained (its own `variables`, `outputs`, `versions`,
+`README.md`, `examples/` and `tests/`) and can be consumed independently. The
+`environments/` root modules wire the modules together into a deployable stack.
 
 ## Conventions
 
@@ -93,13 +93,31 @@ wiring diagram and a cost warning (NAT gateway + RDS are the main charges).
 |------------|---------------------------------------------------------------------|
 | `fmt`      | `terraform fmt -check -recursive`                                    |
 | `validate` | `terraform init -backend=false` + `validate` for each module and the example |
+| `test`     | `terraform test` per module — plan-based, with a mocked AWS provider (no credentials, nothing created) |
 | `lint`     | `tflint` (terraform + AWS rulesets, see `.tflint.hcl`)               |
 | `security` | `tfsec`, failing only on **high/critical** findings                 |
 | `secrets`  | `gitleaks` secret scan                                              |
 | `plan`     | smoke `terraform plan` of `environments/example` (PRs only), posted as a PR comment |
 
-`fmt`/`validate`/`lint`/`security`/`secrets` gate merges. The `plan` job runs only
-when the OIDC role is configured (see below), so CI still works without AWS access.
+`fmt`/`validate`/`test`/`lint`/`security`/`secrets` gate merges. The `plan` job runs
+only when the OIDC role is configured (see below), so CI still works without AWS
+access.
+
+### Tests
+
+Each module has plan-based tests under `modules/<name>/tests/*.tftest.hcl`, run with
+`terraform test`. They use `mock_provider "aws"`, so they execute in seconds without
+AWS credentials and create nothing — they assert on the plan (secure defaults, naming,
+conditional resources) and on expected validation/precondition failures. Run them
+locally with:
+
+```bash
+cd modules/vpc && terraform init -backend=false && terraform test
+```
+
+Deploy-and-destroy integration tests (e.g. Terratest) against a real account are a
+possible future addition; they are deliberately out of scope here since this repo is a
+reference/base and incurs cost only when actually applied.
 
 ### AWS authentication (OIDC, no static keys)
 
@@ -127,9 +145,9 @@ required reviewers on it). It runs `terraform apply` with the same OIDC role and
 ## Status
 
 All modules are implemented (`vpc`, `iam`, `s3`, `rds`, `ec2`, `alb`, `route53`),
-composed in `environments/example` (internet → ALB → private ASG → RDS/S3), and
-covered by CI (fmt, validate, lint, security, secret scan, plan) plus a manual,
-approval-gated apply workflow.
+composed in `environments/example` (internet → ALB → private ASG → RDS/S3), covered
+by plan-based `terraform test` per module, and gated by CI (fmt, validate, test, lint,
+security, secret scan, plan) plus a manual, approval-gated apply workflow.
 
 ## License
 

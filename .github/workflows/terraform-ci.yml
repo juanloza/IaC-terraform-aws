@@ -58,6 +58,35 @@ jobs:
       - name: terraform validate
         run: terraform validate -no-color
 
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        dir:
+          - modules/vpc
+          - modules/iam
+          - modules/s3
+          - modules/rds
+          - modules/ec2
+          - modules/alb
+          - modules/route53
+    defaults:
+      run:
+        working-directory: ${{ matrix.dir }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+      - name: terraform init
+        run: terraform init -backend=false -input=false
+      - name: terraform test
+        # Plan-based tests with a mocked AWS provider: no credentials, nothing created.
+        run: terraform test
+
   lint:
     name: lint
     runs-on: ubuntu-latest
@@ -104,7 +133,7 @@ jobs:
     # OIDC role is configured, so the rest of CI still gates merges even without
     # AWS access.
     if: github.event_name == 'pull_request' && vars.AWS_ROLE_TO_ASSUME != ''
-    needs: [fmt, validate, lint, security, secrets]
+    needs: [fmt, validate, test, lint, security, secrets]
     permissions:
       id-token: write
       contents: read
