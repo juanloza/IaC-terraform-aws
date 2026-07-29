@@ -20,11 +20,12 @@ single_nat_gateway   = true
 bucket_suffix = "change-me-0001"
 
 # Compute
-instance_type    = "t3.micro"
-app_port         = 8080
-min_size         = 1
-max_size         = 2
-desired_capacity = 1
+instance_type     = "t3.micro"
+app_port          = 8080
+health_check_path = "/"
+min_size          = 1
+max_size          = 2
+desired_capacity  = 1
 
 # Database (password supplied separately, see note above)
 db_engine_version          = "16"

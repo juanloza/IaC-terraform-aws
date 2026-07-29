@@ -13,6 +13,7 @@ This project formalizes, as reusable IaC, the kind of AWS setup commonly run in 
 | `modules/vpc` | VPC, public/private subnets across multiple AZs, internet/NAT gateways, route tables |
 | `modules/iam` | Least-privilege IAM roles and policies for compute and storage access |
 | `modules/ec2` | Launch template + Auto Scaling Group (or standalone instances) for application compute |
+| `modules/alb` | Internet-facing Application Load Balancer, target group and listeners (HTTP, optional HTTPS) |
 | `modules/rds` | Managed PostgreSQL instance, subnet group, parameter group, automated backups |
 | `modules/s3` | Versioned S3 bucket with lifecycle rules for assets/backups |
 | `modules/route53` | Hosted zone and DNS records pointing at the app's load balancer |
@@ -125,9 +126,10 @@ required reviewers on it). It runs `terraform apply` with the same OIDC role and
 
 ## Status
 
-All six modules are implemented (`vpc`, `iam`, `s3`, `rds`, `ec2`, `route53`),
-composed in `environments/example`, and covered by CI (fmt, validate, lint, security,
-secret scan, plan) plus a manual, approval-gated apply workflow.
+All modules are implemented (`vpc`, `iam`, `s3`, `rds`, `ec2`, `alb`, `route53`),
+composed in `environments/example` (internet → ALB → private ASG → RDS/S3), and
+covered by CI (fmt, validate, lint, security, secret scan, plan) plus a manual,
+approval-gated apply workflow.
 
 ## License
 

@@ -7,12 +7,18 @@ the fictitious `acme-app`. It is both a usage example and the target of the smok
 ## How the modules are wired
 
 ```
-vpc  ──> private_subnet_ids, vpc_id ─┬─> ec2
-                                     └─> rds
-s3   ──> bucket_arn ────────────────────> iam ──> ec2_instance_profile ──> ec2
-ec2  ──> security_group_id ─────────────> rds (allowed_security_group_id)
-route53 ─ hosted zone (no alias target until a load balancer is added)
+vpc ──> public_subnet_ids ─────────────> alb
+vpc ──> private_subnet_ids, vpc_id ─┬──> ec2
+                                    └──> rds
+s3  ──> bucket_arn ───────────────────> iam ──> ec2_instance_profile ──> ec2
+alb ──> security_group_id, target_group_arn ──> ec2
+ec2 ──> security_group_id ────────────> rds (allowed_security_group_id)
+alb ──> dns_name, zone_id ────────────> route53 (apex alias)
 ```
+
+Traffic path: internet → **alb** (public subnets) → **ec2** ASG (private subnets)
+→ **rds** / **s3**. The ALB uses an HTTP listener by default; set the `alb` module's
+`acm_certificate_arn` (for a domain you own) to enable HTTPS.
 
 ## ⚠️ Cost warning
 

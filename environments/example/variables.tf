@@ -64,9 +64,15 @@ variable "instance_type" {
 }
 
 variable "app_port" {
-  description = "Application port exposed by the instances (within the VPC)."
+  description = "Application port the instances listen on (behind the load balancer)."
   type        = number
   default     = 8080
+}
+
+variable "health_check_path" {
+  description = "HTTP path the ALB target group health check requests."
+  type        = string
+  default     = "/"
 }
 
 variable "min_size" {

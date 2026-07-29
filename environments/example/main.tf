@@ -34,6 +34,21 @@ module "iam" {
   s3_bucket_arn = module.s3.bucket_arn
 }
 
+module "alb" {
+  source = "../../modules/alb"
+
+  project     = var.project
+  environment = var.environment
+
+  # vpc -> alb (public subnets). Internet-facing entry point.
+  vpc_id     = module.vpc.vpc_id
+  subnet_ids = module.vpc.public_subnet_ids
+
+  app_port          = var.app_port
+  health_check_path = var.health_check_path
+  # Set acm_certificate_arn (for a domain you own) to enable HTTPS + redirect.
+}
+
 module "ec2" {
   source = "../../modules/ec2"
 
@@ -48,8 +63,11 @@ module "ec2" {
   instance_type = var.instance_type
   app_port      = var.app_port
 
-  # No ALB in this scope: allow the app port only from inside the VPC.
-  ingress_cidr_blocks = [var.vpc_cidr]
+  # alb -> ec2: accept the app port only from the load balancer, register the
+  # ASG in the ALB target group, and use ELB health checks.
+  alb_security_group_id = module.alb.security_group_id
+  target_group_arns     = [module.alb.target_group_arn]
+  health_check_type     = "ELB"
 
   min_size         = var.min_size
   max_size         = var.max_size
@@ -87,8 +105,8 @@ module "route53" {
   domain_name = var.domain_name
   create_zone = true
 
-  # An ALB is out of scope here, so there is no single entry point to alias to.
-  # When a load balancer is added, pass its target_dns_name / target_zone_id and
-  # set create_alias_record = true.
-  create_alias_record = false
+  # alb -> route53: alias the apex at the load balancer.
+  create_alias_record = true
+  target_dns_name     = module.alb.alb_dns_name
+  target_zone_id      = module.alb.alb_zone_id
 }

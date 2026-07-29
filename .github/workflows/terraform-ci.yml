@@ -41,6 +41,7 @@ jobs:
           - modules/s3
           - modules/rds
           - modules/ec2
+          - modules/alb
           - modules/route53
           - environments/example
     defaults:

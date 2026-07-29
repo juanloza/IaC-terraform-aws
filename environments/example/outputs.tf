@@ -28,6 +28,11 @@ output "ec2_security_group_id" {
   value       = module.ec2.security_group_id
 }
 
+output "alb_dns_name" {
+  description = "Public DNS name of the application load balancer."
+  value       = module.alb.alb_dns_name
+}
+
 output "rds_endpoint" {
   description = "RDS connection endpoint (host:port, no credentials)."
   value       = module.rds.endpoint
