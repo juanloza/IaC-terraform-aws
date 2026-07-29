@@ -1,0 +1,15 @@
+config {
+  # Inspect module blocks / called modules as well as the root.
+  call_module_type = "all"
+}
+
+plugin "terraform" {
+  enabled = true
+  preset  = "recommended"
+}
+
+plugin "aws" {
+  enabled = true
+  version = "0.42.0"
+  source  = "github.com/terraform-linters/tflint-ruleset-aws"
+}

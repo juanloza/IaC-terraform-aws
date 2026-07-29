@@ -1,0 +1,57 @@
+name: terraform-apply
+
+# Manual, approval-gated apply of the example environment.
+# WARNING: running this creates billable AWS resources (NAT gateway, RDS, EC2).
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "apply" to confirm you understand this creates billable AWS resources.'
+        required: true
+        default: ""
+
+permissions:
+  contents: read
+
+env:
+  TF_VERSION: "1.9.8"
+
+jobs:
+  apply:
+    name: apply
+    if: github.event.inputs.confirm == 'apply'
+    runs-on: ubuntu-latest
+    # Protected GitHub environment: configure it with required reviewers so this
+    # job pauses for manual approval before running.
+    environment: production
+    permissions:
+      id-token: write
+      contents: read
+    defaults:
+      run:
+        working-directory: environments/example
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+
+      - name: terraform init
+        # Configure the remote backend in backend.tf for real, persistent state.
+        run: terraform init -input=false
+
+      - name: terraform apply
+        env:
+          TF_VAR_db_password: ${{ secrets.TF_VAR_DB_PASSWORD }}
+        run: |
+          terraform apply -auto-approve -input=false \
+            -var-file=example.tfvars.example \
+            -var="bucket_suffix=${{ vars.TF_BUCKET_SUFFIX }}"

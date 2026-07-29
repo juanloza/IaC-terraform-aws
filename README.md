@@ -23,8 +23,7 @@ This project formalizes, as reusable IaC, the kind of AWS setup commonly run in 
 terraform-aws-modules/
 ├── modules/            # one directory per reusable module (see table above)
 ├── environments/       # root modules that compose the above per environment (e.g. example/)
-├── tests/              # validation/integration tests
-└── .github/workflows/  # CI: fmt, validate, lint, security scan, plan
+└── .github/workflows/  # CI: fmt, validate, lint, security scan, secrets, plan
 ```
 
 Each module is self-contained (its own `variables`, `outputs`, `versions` and
@@ -84,10 +83,51 @@ terraform apply -var-file=example.tfvars.example -var="bucket_suffix=<unique>"
 See [`environments/example/README.md`](environments/example/README.md) for the full
 wiring diagram and a cost warning (NAT gateway + RDS are the main charges).
 
+## Continuous integration
+
+`.github/workflows/terraform-ci.yml` runs on every pull request and on push to
+`main`:
+
+| Job        | What it does                                                        |
+|------------|---------------------------------------------------------------------|
+| `fmt`      | `terraform fmt -check -recursive`                                    |
+| `validate` | `terraform init -backend=false` + `validate` for each module and the example |
+| `lint`     | `tflint` (terraform + AWS rulesets, see `.tflint.hcl`)               |
+| `security` | `tfsec`, failing only on **high/critical** findings                 |
+| `secrets`  | `gitleaks` secret scan                                              |
+| `plan`     | smoke `terraform plan` of `environments/example` (PRs only), posted as a PR comment |
+
+`fmt`/`validate`/`lint`/`security`/`secrets` gate merges. The `plan` job runs only
+when the OIDC role is configured (see below), so CI still works without AWS access.
+
+### AWS authentication (OIDC, no static keys)
+
+The `plan` and `apply` jobs obtain short-lived AWS credentials via GitHub OIDC —
+there are **no** `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY` secrets. To enable them,
+configure in the repository:
+
+- **Variables**: `AWS_ROLE_TO_ASSUME` (IAM role ARN), `AWS_REGION`, and
+  `TF_BUCKET_SUFFIX` (for apply).
+- **Secret**: `TF_VAR_DB_PASSWORD` (for apply).
+
+Create the role once (out of band, or via a small `bootstrap/` you add later): an IAM
+OIDC identity provider for `token.actions.githubusercontent.com`, and an IAM role
+whose trust policy is scoped to this repository (`sub` = `repo:<owner>/<repo>:*`) with
+the permissions Terraform needs. See the AWS/GitHub OIDC documentation for the exact
+trust policy.
+
+### Apply (manual, approval-gated)
+
+`.github/workflows/terraform-apply.yml` is a manual `workflow_dispatch` that requires
+typing `apply` to confirm and runs in a protected `production` environment (configure
+required reviewers on it). It runs `terraform apply` with the same OIDC role and
+**creates billable resources** — use deliberately and `destroy` afterwards.
+
 ## Status
 
-Under construction. All six modules are implemented (`vpc`, `iam`, `s3`, `rds`,
-`ec2`, `route53`) and composed in `environments/example`. Remaining: CI/CD.
+All six modules are implemented (`vpc`, `iam`, `s3`, `rds`, `ec2`, `route53`),
+composed in `environments/example`, and covered by CI (fmt, validate, lint, security,
+secret scan, plan) plus a manual, approval-gated apply workflow.
 
 ## License
 
