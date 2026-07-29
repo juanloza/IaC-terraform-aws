@@ -6,6 +6,9 @@
 # Terraform working directory and plugins
 .terraform/
 .terraform.lock.hcl
+# ...but do version the dependency lock file for root modules (environments) so
+# provider versions are pinned for anyone deploying them.
+!environments/**/.terraform.lock.hcl
 
 # Crash / debug logs
 crash.log

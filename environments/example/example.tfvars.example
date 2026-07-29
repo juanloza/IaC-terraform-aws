@@ -1,0 +1,40 @@
+# Example variable values for the `example` environment.
+# Copy to a local, un-versioned file (e.g. terraform.tfvars) and adjust.
+#
+# Do NOT put db_password here. Pass it at runtime instead:
+#   export TF_VAR_db_password='...'         # or
+#   terraform plan -var="db_password=..."
+
+aws_region  = "us-east-1"
+project     = "acme-app"
+environment = "example"
+
+# Network
+vpc_cidr             = "10.0.0.0/16"
+azs                  = ["us-east-1a", "us-east-1b"]
+public_subnet_cidrs  = ["10.0.0.0/24", "10.0.1.0/24"]
+private_subnet_cidrs = ["10.0.10.0/24", "10.0.11.0/24"]
+single_nat_gateway   = true
+
+# Storage — must be globally unique; change this to something account-specific.
+bucket_suffix = "change-me-0001"
+
+# Compute
+instance_type    = "t3.micro"
+app_port         = 8080
+min_size         = 1
+max_size         = 2
+desired_capacity = 1
+
+# Database (password supplied separately, see note above)
+db_engine_version          = "16"
+db_instance_class          = "db.t3.micro"
+db_allocated_storage       = 20
+db_name                    = "appdb"
+db_username                = "appuser"
+db_multi_az                = false
+db_backup_retention_period = 7
+
+# DNS (fictitious domain; .example is reserved by RFC 2606)
+create_dns  = true
+domain_name = "acme-app.example"

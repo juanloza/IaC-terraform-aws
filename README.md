@@ -68,19 +68,26 @@ IPs or credentials appear anywhere in this repository.
 - AWS credentials configured locally (or, in CI, short-lived credentials obtained
   via GitHub OIDC — no static access keys)
 
-## Usage (once implemented)
+## Usage
+
+Compose the modules through the example environment:
 
 ```bash
 cd environments/example
+
+export TF_VAR_db_password='choose-a-strong-password'   # never commit this
 terraform init
-terraform plan  -var-file=example.tfvars
-terraform apply -var-file=example.tfvars
+terraform plan  -var-file=example.tfvars.example -var="bucket_suffix=<unique>"
+terraform apply -var-file=example.tfvars.example -var="bucket_suffix=<unique>"
 ```
+
+See [`environments/example/README.md`](environments/example/README.md) for the full
+wiring diagram and a cost warning (NAT gateway + RDS are the main charges).
 
 ## Status
 
 Under construction. All six modules are implemented (`vpc`, `iam`, `s3`, `rds`,
-`ec2`, `route53`). Remaining: the `environments/example` composition and CI/CD.
+`ec2`, `route53`) and composed in `environments/example`. Remaining: CI/CD.
 
 ## License
 
